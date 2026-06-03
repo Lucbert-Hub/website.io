@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Aktien-Renditerechner</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0e0f11;
+    --surface: #16181c;
+    --surface2: #1e2026;
+    --border: rgba(255,255,255,0.08);
+    --border2: rgba(255,255,255,0.14);
+    --text: #f0ede8;
+    --muted: #7a7875;
+    --accent: #c8f060;
+    --accent2: #60d4f0;
+    --danger: #f0806a;
+    --font-display: 'DM Serif Display', serif;
+    --font-body: 'DM Sans', sans-serif;
+    --radius: 14px;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-body);
+    font-weight: 300;
+    min-height: 100vh;
+    padding: 2rem 1rem 4rem;
+  }
+
+  header {
+    max-width: 760px;
+    margin: 0 auto 3rem;
+    text-align: center;
+    animation: fadeUp .6s ease both;
+  }
+
+  header h1 {
+    font-family: var(--font-display);
+    font-size: clamp(2rem, 6vw, 3.2rem);
+    font-weight: 400;
+    letter-spacing: -.02em;
+    line-height: 1.15;
+    margin-bottom: .5rem;
+  }
+
+  header p {
+    color: var(--muted);
+    font-size: .95rem;
+  }
+
+  .layout {
+    max-width: 900px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: 320px 1fr;
+    gap: 1.5rem;
+    align-items: start;
+  }
+
+  @media(max-width: 700px) {
+    .layout { grid-template-columns: 1fr; }
+  }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.5rem;
+    animation: fadeUp .6s ease both;
+  }
+
+  .card:nth-child(2) { animation-delay: .1s; }
+
+  .card-title {
+    font-size: .75rem;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 1.5rem;
+  }
+
+  .field { margin-bottom: 1.25rem; }
+  .field label {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    font-size: .8rem;
+    color: var(--muted);
+    margin-bottom: .5rem;
+  }
+  .field label span {
+    font-family: var(--font-body);
+    font-weight: 500;
+    font-size: .95rem;
+    color: var(--text);
+  }
+
+  input[type=range] {
+    -webkit-appearance: none;
+    width: 100%;
+    height: 3px;
+    background: var(--surface2);
+    border-radius: 99px;
+    outline: none;
+    cursor: pointer;
+  }
+
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: var(--accent);
+    border: 3px solid var(--bg);
+    box-shadow: 0 0 0 1px var(--accent);
+    transition: transform .15s;
+  }
+  input[type=range]::-webkit-slider-thumb:hover { transform: scale(1.2); }
+
+  .results {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: .75rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .metric {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1rem;
+  }
+  .metric.highlight {
+    background: rgba(200, 240, 96, 0.07);
+    border-color: rgba(200, 240, 96, 0.25);
+    grid-column: 1 / -1;
+  }
+  .metric-label {
+    font-size: .72rem;
+    color: var(--muted);
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    margin-bottom: .4rem;
+  }
+  .metric-value {
+    font-family: var(--font-display);
+    font-size: 1.5rem;
+    font-weight: 400;
+    color: var(--text);
+  }
+  .metric.highlight .metric-value {
+    font-size: 2rem;
+    color: var(--accent);
+  }
+  .metric-sub {
+    font-size: .75rem;
+    color: var(--muted);
+    margin-top: .2rem;
+  }
+
+  .chart-wrap {
+    position: relative;
+    height: 220px;
+    margin-top: 1rem;
+  }
+
+  .disclaimer {
+    max-width: 900px;
+    margin: 1.5rem auto 0;
+    font-size: .75rem;
+    color: var(--muted);
+    text-align: center;
+    line-height: 1.6;
+    animation: fadeUp .7s .3s ease both;
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Aktien-Renditerechner</h1>
+  <p>Wie viel wächst dein Investment über die Zeit?</p>
+</header>
+
+<div class="layout">
+  <!-- Controls -->
+  <div class="card">
+    <p class="card-title">Parameter</p>
+
+    <div class="field">
+      <label>Startkapital <span id="lStart">1.000 €</span></label>
+      <input type="range" id="start" min="0" max="50000" step="500" value="1000">
+    </div>
+
+    <div class="field">
+      <label>Monatliche Rate <span id="lRate">200 €</span></label>
+      <input type="range" id="rate" min="0" max="2000" step="50" value="200">
+    </div>
+
+    <div class="field">
+      <label>Anlagedauer <span id="lYears">20 Jahre</span></label>
+      <input type="range" id="years" min="1" max="50" step="1" value="20">
+    </div>
+
+    <div class="field">
+      <label>Jährl. Rendite <span id="lReturn">7 %</span></label>
+      <input type="range" id="ret" min="1" max="20" step="0.5" value="7">
+    </div>
+
+    <div class="field">
+      <label>Jährl. Inflation <span id="lInfl">2 %</span></label>
+      <input type="range" id="infl" min="0" max="10" step="0.5" value="2">
+    </div>
+  </div>
+
+  <!-- Results -->
+  <div class="card">
+    <p class="card-title">Ergebnis</p>
+
+    <div class="results">
+      <div class="metric highlight">
+        <div class="metric-label">Endwert (nominal)</div>
+        <div class="metric-value" id="rTotal">—</div>
+        <div class="metric-sub" id="rReal">Kaufkraftbereinigt: —</div>
+      </div>
+      <div class="metric">
+        <div class="metric-label">Eingezahlt</div>
+        <div class="metric-value" id="rIn">—</div>
+      </div>
+      <div class="metric">
+        <div class="metric-label">Zinsgewinn</div>
+        <div class="metric-value" id="rGain">—</div>
+        <div class="metric-sub" id="rFactor">—</div>
+      </div>
+    </div>
+
+    <div class="chart-wrap">
+      <canvas id="chart"></canvas>
+    </div>
+  </div>
+</div>
+
+<p class="disclaimer">
+  Diese Berechnung dient nur zur Orientierung und stellt keine Anlageberatung dar.<br>
+  Vergangene Renditen sind keine Garantie für künftige Ergebnisse.
+</p>
+
+<script>
+  const fmt = v => v >= 1e6
+    ? (v/1e6).toFixed(2).replace('.',',') + ' Mio. €'
+    : Math.round(v).toLocaleString('de-DE') + ' €';
+
+  function calc() {
+    const start   = +document.getElementById('start').value;
+    const rate    = +document.getElementById('rate').value;
+    const years   = +document.getElementById('years').value;
+    const ret     = +document.getElementById('ret').value / 100;
+    const infl    = +document.getElementById('infl').value / 100;
+    const mr      = ret / 12;
+
+    const labels = [], nomData = [], inData = [];
+    let nom = start, invested = start;
+
+    for (let m = 1; m <= years * 12; m++) {
+      nom = nom * (1 + mr) + rate;
+      invested += rate;
+      if (m % 12 === 0) {
+        labels.push(m/12 + 'J');
+        nomData.push(Math.round(nom));
+        inData.push(Math.round(invested));
+      }
+    }
+
+    const realFactor = Math.pow(1 + infl, years);
+    const real = nom / realFactor;
+    const gain = nom - invested;
+    const factor = invested > 0 ? (nom / invested).toFixed(1) : '—';
+
+    document.getElementById('rTotal').textContent = fmt(nom);
+    document.getElementById('rReal').textContent  = 'Kaufkraftbereinigt: ' + fmt(real);
+    document.getElementById('rIn').textContent    = fmt(invested);
+    document.getElementById('rGain').textContent  = fmt(gain);
+    document.getElementById('rFactor').textContent = 'Faktor ×' + factor;
+
+    updateChart(labels, nomData, inData);
+  }
+
+  let myChart;
+  function updateChart(labels, nom, inv) {
+    const ctx = document.getElementById('chart').getContext('2d');
+    if (myChart) myChart.destroy();
+    myChart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels,
+        datasets: [
+          {
+            label: 'Endwert',
+            data: nom,
+            borderColor: '#c8f060',
+            backgroundColor: 'rgba(200,240,96,0.08)',
+            borderWidth: 2,
+            fill: true,
+            tension: .4,
+            pointRadius: 0
+          },
+          {
+            label: 'Eingezahlt',
+            data: inv,
+            borderColor: 'rgba(255,255,255,0.2)',
+            backgroundColor: 'rgba(255,255,255,0.03)',
+            borderWidth: 1.5,
+            fill: true,
+            tension: .4,
+            pointRadius: 0,
+            borderDash: [4, 3]
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        animation: { duration: 400 },
+        interaction: { mode: 'index', intersect: false },
+        plugins: {
+          legend: {
+            labels: { color: '#7a7875', font: { family: 'DM Sans', size: 11 }, boxWidth: 12, padding: 14 }
+          },
+          tooltip: {
+            backgroundColor: '#1e2026',
+            borderColor: 'rgba(255,255,255,0.1)',
+            borderWidth: 1,
+            titleColor: '#f0ede8',
+            bodyColor: '#7a7875',
+            callbacks: {
+              label: ctx => ' ' + ctx.dataset.label + ': ' + Math.round(ctx.raw).toLocaleString('de-DE') + ' €'
+            }
+          }
+        },
+        scales: {
+          x: { ticks: { color: '#7a7875', font: { size: 10 }, maxTicksLimit: 6 }, grid: { color: 'rgba(255,255,255,0.04)' } },
+          y: { ticks: { color: '#7a7875', font: { size: 10 }, callback: v => v >= 1e6 ? (v/1e6).toFixed(1)+'M' : v >= 1000 ? (v/1000).toFixed(0)+'k' : v }, grid: { color: 'rgba(255,255,255,0.04)' } }
+        }
+      }
+    });
+  }
+
+  // Update labels live
+  const fields = [
+    ['start', 'lStart', v => Math.round(v).toLocaleString('de-DE') + ' €'],
+    ['rate',  'lRate',  v => Math.round(v).toLocaleString('de-DE') + ' €'],
+    ['years', 'lYears', v => v + ' Jahre'],
+    ['ret',   'lReturn',v => v + ' %'],
+    ['infl',  'lInfl',  v => v + ' %'],
+  ];
+  fields.forEach(([id, lbl, fmt]) => {
+    const el = document.getElementById(id);
+    el.addEventListener('input', () => {
+      document.getElementById(lbl).textContent = fmt(el.value);
+      calc();
+    });
+  });
+
+  calc();
+</script>
+</body>
+</html>

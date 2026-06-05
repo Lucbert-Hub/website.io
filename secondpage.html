@@ -3,8 +3,1053 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Alle Aktien und ETFs im Überblick</title>
+<title>ETF & Aktien Übersicht</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0e0f11;
+    --surface: #16181c;
+    --surface2: #1e2026;
+    --border: rgba(255,255,255,0.08);
+    --border2: rgba(255,255,255,0.14);
+    --text: #f0ede8;
+    --muted: #7a7875;
+    --accent: #c8f060;
+    --accent2: #60d4f0;
+    --danger: #f0806a;
+    --amber: #f0c060;
+    --font-display: 'DM Serif Display', serif;
+    --font-body: 'DM Sans', sans-serif;
+    --radius: 14px;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-body);
+    font-weight: 300;
+    min-height: 100vh;
+    padding: 2rem 1rem 5rem;
+  }
+
+  header {
+    max-width: 860px;
+    margin: 0 auto 2.5rem;
+    text-align: center;
+    animation: fadeUp .6s ease both;
+  }
+
+  header h1 {
+    font-family: var(--font-display);
+    font-size: clamp(2rem, 6vw, 3.2rem);
+    font-weight: 400;
+    letter-spacing: -.02em;
+    line-height: 1.15;
+    margin-bottom: .5rem;
+  }
+
+  header p { color: var(--muted); font-size: .95rem; }
+
+  .nav-bar {
+    max-width: 860px;
+    margin: 0 auto 2rem;
+    display: flex;
+    justify-content: flex-start;
+    animation: fadeUp .5s ease both;
+  }
+
+  .nav-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: .5rem;
+    background: linear-gradient(135deg, rgba(200,240,96,0.12), rgba(200,240,96,0.05));
+    border: 1px solid rgba(200,240,96,0.35);
+    color: var(--accent);
+    font-family: var(--font-body);
+    font-size: .85rem;
+    font-weight: 500;
+    padding: .55rem 1.1rem;
+    border-radius: 99px;
+    cursor: pointer;
+    text-decoration: none;
+    transition: background .2s, border-color .2s, transform .15s;
+  }
+  .nav-btn:hover {
+    background: rgba(200,240,96,0.2);
+    border-color: rgba(200,240,96,0.6);
+    transform: translateY(-1px);
+  }
+  .nav-btn svg {
+    width: 15px; height: 15px;
+    stroke: currentColor; fill: none;
+    stroke-width: 2; stroke-linecap: round; stroke-linejoin: round;
+  }
+
+  /* Filter Tabs */
+  .filter-bar {
+    max-width: 860px;
+    margin: 0 auto 2rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: .5rem;
+    animation: fadeUp .6s .1s ease both;
+  }
+
+  .filter-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: .4rem;
+    background: var(--surface);
+    border: 1px solid var(--border2);
+    color: var(--muted);
+    font-family: var(--font-body);
+    font-size: .8rem;
+    font-weight: 400;
+    padding: .4rem .9rem;
+    border-radius: 99px;
+    cursor: pointer;
+    transition: all .2s;
+  }
+  .filter-btn:hover { border-color: rgba(255,255,255,0.25); color: var(--text); }
+  .filter-btn.active { border-color: rgba(200,240,96,0.5); color: var(--accent); background: rgba(200,240,96,0.07); }
+  .filter-dot {
+    width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0;
+  }
+  .dot-etf     { background: var(--accent2); }
+  .dot-aktie   { background: var(--accent); }
+  .dot-index   { background: var(--danger); }
+  .dot-anleihe { background: #b4b4b4; }
+  .dot-all     { background: linear-gradient(135deg, var(--accent), var(--accent2)); }
+
+  /* Section */
+  .section {
+    max-width: 860px;
+    margin: 0 auto 2.5rem;
+    animation: fadeUp .6s .15s ease both;
+  }
+
+  .section-header {
+    display: flex;
+    align-items: center;
+    gap: .75rem;
+    margin-bottom: 1rem;
+  }
+
+  .section-title {
+    font-family: var(--font-display);
+    font-size: 1.35rem;
+    font-weight: 400;
+    letter-spacing: -.01em;
+  }
+
+  .section-count {
+    font-size: .72rem;
+    color: var(--muted);
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 99px;
+    padding: .15rem .6rem;
+    letter-spacing: .05em;
+  }
+
+  /* Cards Grid */
+  .cards-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 1rem;
+  }
+
+  @media(max-width: 600px) { .cards-grid { grid-template-columns: 1fr; } }
+
+  .item-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.15rem 1.25rem;
+    transition: border-color .2s, transform .2s;
+    position: relative;
+    overflow: hidden;
+  }
+  .item-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    border-radius: var(--radius) var(--radius) 0 0;
+    opacity: 0;
+    transition: opacity .2s;
+  }
+  .item-card.etf::before     { background: var(--accent2); }
+  .item-card.aktie::before   { background: var(--accent); }
+  .item-card.index::before   { background: var(--danger); }
+  .item-card.anleihe::before { background: #b4b4b4; }
+
+  .item-card:hover { border-color: var(--border2); transform: translateY(-2px); }
+  .item-card:hover::before { opacity: 1; }
+
+  .card-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: .65rem;
+  }
+
+  .card-name {
+    font-weight: 500;
+    font-size: .95rem;
+    line-height: 1.3;
+    flex: 1;
+    padding-right: .5rem;
+  }
+
+  .card-ticker {
+    font-size: .72rem;
+    font-weight: 500;
+    letter-spacing: .06em;
+    padding: .18rem .55rem;
+    border-radius: 6px;
+    flex-shrink: 0;
+    margin-top: .1rem;
+  }
+  .etf .card-ticker     { background: rgba(96,212,240,0.12); color: var(--accent2); border: 1px solid rgba(96,212,240,0.2); }
+  .aktie .card-ticker   { background: rgba(200,240,96,0.10); color: var(--accent);  border: 1px solid rgba(200,240,96,0.2); }
+  .index .card-ticker   { background: rgba(240,128,106,0.10);color: var(--danger);  border: 1px solid rgba(240,128,106,0.2); }
+  .anleihe .card-ticker { background: rgba(180,180,180,0.10);color: #b4b4b4;        border: 1px solid rgba(180,180,180,0.2); }
+
+  .card-desc {
+    font-size: .82rem;
+    color: var(--muted);
+    line-height: 1.55;
+    margin-bottom: .85rem;
+  }
+
+  .card-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-top: .75rem;
+    border-top: 1px solid var(--border);
+  }
+
+  .card-return {
+    display: flex;
+    flex-direction: column;
+    gap: .1rem;
+  }
+  .return-label {
+    font-size: .65rem;
+    color: var(--muted);
+    letter-spacing: .07em;
+    text-transform: uppercase;
+  }
+  .return-value {
+    font-family: var(--font-display);
+    font-size: 1.2rem;
+    font-weight: 400;
+  }
+  .etf .return-value     { color: var(--accent2); }
+  .aktie .return-value   { color: var(--accent); }
+  .index .return-value   { color: var(--danger); }
+  .anleihe .return-value { color: #b4b4b4; }
+
+  .risk-bar {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: .25rem;
+  }
+  .risk-label {
+    font-size: .65rem;
+    color: var(--muted);
+    letter-spacing: .07em;
+    text-transform: uppercase;
+  }
+  .risk-dots {
+    display: flex;
+    gap: 3px;
+  }
+  .risk-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--surface2);
+    border: 1px solid var(--border2);
+  }
+  .risk-dot.filled { border-color: transparent; }
+  .etf .risk-dot.filled     { background: var(--accent2); }
+  .aktie .risk-dot.filled   { background: var(--accent); }
+  .index .risk-dot.filled   { background: var(--danger); }
+  .anleihe .risk-dot.filled { background: #b4b4b4; }
+
+  /* hidden when filtered */
+  .item-card.hidden { display: none; }
+  .section.hidden   { display: none; }
+
+  .disclaimer {
+    max-width: 860px;
+    margin: 2rem auto 0;
+    font-size: .75rem;
+    color: var(--muted);
+    text-align: center;
+    line-height: 1.6;
+    animation: fadeUp .7s .4s ease both;
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>ETFs, Aktien & Indizes</h1>
+  <p>Alle Instrumente im Überblick — mit Erklärung, Rendite und Risikobewertung</p>
+</header>
+
+<div class="nav-bar">
+  <a href="aktien-renditerechner.html" class="nav-btn">
+    <svg viewBox="0 0 24 24"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+    Zurück zum Rechner
+  </a>
+</div>
+
+<!-- Filter -->
+<div class="filter-bar">
+  <button class="filter-btn active" onclick="filter('all')">
+    <span class="filter-dot dot-all"></span> Alle
+  </button>
+  <button class="filter-btn" onclick="filter('etf')">
+    <span class="filter-dot dot-etf"></span> ETFs
+  </button>
+  <button class="filter-btn" onclick="filter('aktie')">
+    <span class="filter-dot dot-aktie"></span> Aktien
+  </button>
+  <button class="filter-btn" onclick="filter('index')">
+    <span class="filter-dot dot-index"></span> Indizes
+  </button>
+  <button class="filter-btn" onclick="filter('anleihe')">
+    <span class="filter-dot dot-anleihe"></span> Anleihen
+  </button>
+</div>
+
+<!-- ── Welt-ETFs ── -->
+<div class="section" data-section="etf">
+  <div class="section-header">
+    <span class="section-title">🌍 Welt-ETFs</span>
+    <span class="section-count">4 Produkte</span>
+  </div>
+  <div class="cards-grid">
+
+    <div class="item-card etf" data-type="etf">
+      <div class="card-top">
+        <div class="card-name">iShares Core MSCI World</div>
+        <div class="card-ticker">IWDA</div>
+      </div>
+      <div class="card-desc">Der beliebteste Welt-ETF unter deutschen Anlegern. Investiert in rund 1.500 große und mittelgroße Unternehmen aus 23 Industrieländern. Kein Schwellenländer-Anteil. Thesaurierend — Erträge werden automatisch reinvestiert.</div>
+      <div class="card-footer">
+        <div class="card-return">
+          <span class="return-label">Ø Rendite p.a.</span>
+          <span class="return-value">8,5 %</span>
+        </div>
+        <div class="risk-bar">
+          <span class="risk-label">Risiko</span>
+          <div class="risk-dots">
+            <div class="risk-dot filled"></div>
+            <div class="risk-dot filled"></div>
+            <div class="risk-dot filled"></div>
+            <div class="risk-dot"></div>
+            <div class="risk-dot"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="item-card etf" data-type="etf">
+      <div class="card-top">
+        <div class="card-name">Vanguard S&P 500 UCITS ETF</div>
+        <div class="card-ticker">VUSA</div>
+      </div>
+      <div class="card-desc">Bildet die 500 größten US-Unternehmen ab — darunter Apple, Microsoft, Amazon und Nvidia. Historisch die stärkste Performance aller großen Indizes. Hohe Konzentration auf US-Technologie.</div>
+      <div class="card-footer">
+        <div class="card-return">
+          <span class="return-label">Ø Rendite p.a.</span>
+          <span class="return-value">10,2 %</span>
+        </div>
+        <div class="risk-bar">
+          <span class="risk-label">Risiko</span>
+          <div class="risk-dots">
+            <div class="risk-dot filled"></div>
+            <div class="risk-dot filled"></div>
+            <div class="risk-dot filled"></div>
+            <div class="risk-dot"></div>
+            <div class="risk-dot"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="item-card etf" data-type="etf">
+      <div class="card-top">
+        <div class="card-name">MSCI ACWI IMI</div>
+        <div class="card-ticker">SPYI</div>
+      </div>
+      <div class="card-desc">Einer der breitesten ETFs überhaupt: über 9.000 Unternehmen aus Industrie- und Schwellenländern weltweit. Ideal für maximale Diversifikation. Enthält auch Small-Caps (IMI = Investable Market Index).</div>
+      <div class="card-footer">
+        <div class="card-return">
+          <span class="return-label">Ø Rendite p.a.</span>
+          <span class="return-value">8,0 %</span>
+        </div>
+        <div class="risk-bar">
+          <span class="risk-label">Risiko</span>
+          <div class="risk-dots">
+            <div class="risk-dot filled"></div>
+            <div class="risk-dot filled"></div>
+            <div class="risk-dot filled"></div>
+            <div class="risk-dot"></div>
+            <div class="risk-dot"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="item-card etf" data-type="etf">
+      <div class="card-top">
+        <div class="card-name">Vanguard FTSE All-World</div>
+        <div class="card-ticker">VWRL</div>
+      </div>
+      <div class="card-desc">Über 3.700 Aktien aus Industrie- und Schwellenländern in einem einzigen ETF. Ausschüttend — Dividenden werden quartalsweise ausgezahlt. Sehr günstige TER von 0,22 %. Klassiker für Buy-and-Hold-Anleger.</div>
+      <div class="card-footer">
+        <div class="card-return">
+          <span class="return-label">Ø Rendite p.a.</span>
+          <span class="return-value">7,8 %</span>
+        </div>
+        <div class="risk-bar">
+          <span class="risk-label">Risiko</span>
+          <div class="risk-dots">
+            <div class="risk-dot filled"></div>
+            <div class="risk-dot filled"></div>
+            <div class="risk-dot filled"></div>
+            <div class="risk-dot"></div>
+            <div class="risk-dot"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ── Deutschland / Europa ── -->
+<div class="section" data-section="etf index">
+  <div class="section-header">
+    <span class="section-title">🇩🇪 Deutschland & Europa</span>
+    <span class="section-count">3 Produkte</span>
+  </div>
+  <div class="cards-grid">
+
+    <div class="item-card index" data-type="index">
+      <div class="card-top">
+        <div class="card-name">DAX 40 ETF</div>
+        <div class="card-ticker">EXS1</div>
+      </div>
+      <div class="card-desc">Bildet Deutschlands 40 größte börsennotierte Unternehmen ab — von SAP über Siemens bis Allianz. Stärker zyklisch als ein Weltindex. Gut als Beimischung für Deutschland-Fokus, aber wenig diversifiziert.</div>
+      <div class="card-footer">
+        <div class="card-return">
+          <span class="return-label">Ø Rendite p.a.</span>
+          <span class="return-value">7,2 %</span>
+        </div>
+        <div class="risk-bar">
+          <span class="risk-label">Risiko</span>
+          <div class="risk-dots">
+            <div class="risk-dot filled"></div>
+            <div class="risk-dot filled"></div>
+            <div class="risk-dot filled"></div>
+            <div class="risk-dot filled"></div>
+            <div class="risk-dot"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="item-card etf" data-type="etf">
+      <div class="card-top">
+        <div class="card-name">Euro Stoxx 50</div>
+        <div class="card-ticker">MEUD</div>
+      </div>
+      <div class="card-desc">Die 50 größten Unternehmen der Eurozone, darunter LVMH, TotalEnergies, Airbus und SAP. Guter Einstieg in Europa — aber mit Fokus auf Großkonzerne. Geringere Diversifikation als ein breiter Europa-ETF.</div>
+      <div class="card-footer">
+        <div class="card-return">
+          <span class="return-label">Ø Rendite p.a.</span>
+          <span class="return-value">6,8 %</span>
+        </div>
+        <div class="risk-bar">
+          <span class="risk-label">Risiko</span>
+          <div class="risk-dots">
+            <div class="risk-dot filled"></div>
+            <div class="risk-dot filled"></div>
+            <div class="risk-dot filled"></div>
+            <div class="risk-dot"></div>
+            <div class="risk-dot"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="item-card etf" data-type="etf">
+      <div class="card-top">
+        <div class="card-name">MSCI Europe</div>
+        <div class="card-ticker">IMEU</div>
+      </div>
+      <div class="card-desc">Breite Abdeckung europäischer Industrieländer mit über 400 Unternehmen. Inkl. UK, Schweiz, Schweden — nicht nur Eurozone. Günstige Bewertung im Vergleich zu US-Märkten, aber historisch schwächeres Wachstum.</div>
+      <div class="card-footer">
+        <div class="card-return">
+          <span class="return-label">Ø Rendite p.a.</span>
+          <span class="return-value">6,5 %</span>
+        </div>
+        <div class="risk-bar">
+          <span class="risk-label">Risiko</span>
+          <div class="risk-dots">
+            <div class="risk-dot filled"></div>
+            <div class="risk-dot filled"></div>
+            <div class="risk-dot filled"></div>
+            <div class="risk-dot"></div>
+            <div class="risk-dot"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ── Sektor-ETFs ── -->
+<div class="section" data-section="etf">
+  <div class="section-header">
+    <span class="section-title">📈 Sektor-ETFs</span>
+    <span class="section-count">4 Produkte</span>
+  </div>
+  <div class="cards-grid">
+
+    <div class="item-card etf" data-type="etf">
+      <div class="card-top">
+        <div class="card-name">Invesco Nasdaq 100</div>
+        <div class="card-ticker">EQQQ</div>
+      </div>
+      <div class="card-desc">Die 100 größten Nicht-Finanz-Unternehmen der Nasdaq — dominiert von Apple, Microsoft, Nvidia, Amazon und Meta. Sehr technik-lastig und volatil, aber mit außergewöhnlicher historischer Performance der letzten Dekade.</div>
+      <div class="card-footer">
+        <div class="card-return">
+          <span class="return-label">Ø Rendite p.a.</span>
+          <span class="return-value">14,5 %</span>
+        </div>
+        <div class="risk-bar">
+          <span class="risk-label">Risiko</span>
+          <div class="risk-dots">
+            <div class="risk-dot filled"></div>
+            <div class="risk-dot filled"></div>
+            <div class="risk-dot filled"></div>
+            <div class="risk-dot filled"></div>
+            <div class="risk-dot"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="item-card etf" data-type="etf">
+      <div class="card-top">
+        <div class="card-name">iShares Global Tech</div>
+        <div class="card-ticker">QDVE</div>
+      </div>
+      <div class="card-desc">Globale Technologieunternehmen aus dem MSCI World IT-Sektor. Breiter als der Nasdaq 100, aber ähnlich tech-fokussiert. Enthält auch kleinere Tech-Firmen aus Europa und Asien. Hohe Konzentration bei US-Großkonzernen.</div>
+      <div class="card-footer">
+        <div class="card-return">
+          <span class="return-label">Ø Rendite p.a.</span>
+          <span class="return-value">13,0 %</span>
+        </div>
+        <div class="risk-bar">
+          <span class="risk-label">Risiko</span>
+          <div class="risk-dots">
+            <div class="risk-dot filled"></div>
+            <div class="risk-dot filled"></div>
+            <div class="risk-dot filled"></div>
+            <div class="risk-dot filled"></div>
+            <div class="risk-dot"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="item-card etf" data-type="etf">
+      <div class="card-top">
+        <div class="card-name">iShares Global Clean Energy</div>
+        <div class="card-ticker">IQQH</div>
+      </div>
+      <div class="card-desc">Investiert in Unternehmen aus Wind-, Solar- und anderer erneuerbarer Energie. Stark von Politik und Subventionen abhängig. Hohe Schwankungen — erlebte 2021–2023 einen starken Rückgang nach dem Boom. Für risikofreudige Anleger.</div>
+      <div class="card-footer">
+        <div class="card-return">
+          <span class="return-label">Ø Rendite p.a.</span>
+          <span class="return-value">5,5 %</span>
+        </div>
+        <div class="risk-bar">
+          <span class="risk-label">Risiko</span>
+          <div class="risk-dots">
+            <div class="risk-dot filled"></div>
+            <div class="risk-dot filled"></div>
+            <div class="risk-dot filled"></div>
+            <div class="risk-dot filled"></div>
+            <div class="risk-dot filled"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="item-card etf" data-type="etf">
+      <div class="card-top">
+        <div class="card-name">iShares Healthcare Innovation</div>
+        <div class="card-ticker">HEAL</div>
+      </div>
+      <div class="card-desc">Pharma, Biotechnologie und Medizintechnik weltweit. Defensive Branche mit stabilem Wachstum durch demografischen Wandel. Weniger zyklisch als Tech, aber Einzeltitelrisiken bei Medikamentenzulassungen beachten.</div>
+      <div class="card-footer">
+        <div class="card-return">
+          <span class="return-label">Ø Rendite p.a.</span>
+          <span class="return-value">9,0 %</span>
+        </div>
+        <div class="risk-bar">
+          <span class="risk-label">Risiko</span>
+          <div class="risk-dots">
+            <div class="risk-dot filled"></div>
+            <div class="risk-dot filled"></div>
+            <div class="risk-dot filled"></div>
+            <div class="risk-dot"></div>
+            <div class="risk-dot"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ── ESG ── -->
+<div class="section" data-section="etf">
+  <div class="section-header">
+    <span class="section-title">🌱 Nachhaltig (ESG)</span>
+    <span class="section-count">2 Produkte</span>
+  </div>
+  <div class="cards-grid">
+
+    <div class="item-card etf" data-type="etf">
+      <div class="card-top">
+        <div class="card-name">MSCI World ESG Screened</div>
+        <div class="card-ticker">SUWS</div>
+      </div>
+      <div class="card-desc">Wie der MSCI World, aber ohne Unternehmen aus Waffen, Tabak, Kohle und anderen kontroversen Branchen. Sehr ähnliche Performance zum klassischen MSCI World. Ideal für Anleger mit Nachhaltigkeitsanspruch ohne Renditeverlust.</div>
+      <div class="card-footer">
+        <div class="card-return">
+          <span class="return-label">Ø Rendite p.a.</span>
+          <span class="return-value">7,5 %</span>
+        </div>
+        <div class="risk-bar">
+          <span class="risk-label">Risiko</span>
+          <div class="risk-dots">
+            <div class="risk-dot filled"></div>
+            <div class="risk-dot filled"></div>
+            <div class="risk-dot filled"></div>
+            <div class="risk-dot"></div>
+            <div class="risk-dot"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="item-card etf" data-type="etf">
+      <div class="card-top">
+        <div class="card-name">S&P 500 ESG</div>
+        <div class="card-ticker">SUSP</div>
+      </div>
+      <div class="card-desc">Top US-Unternehmen aus dem S&P 500 mit hohem ESG-Score. Schließt kontroverse Branchen aus und gewichtet nach Nachhaltigkeitskriterien. Performance nahe am klassischen S&P 500 — kaum Abstriche für gutes Gewissen.</div>
+      <div class="card-footer">
+        <div class="card-return">
+          <span class="return-label">Ø Rendite p.a.</span>
+          <span class="return-value">9,5 %</span>
+        </div>
+        <div class="risk-bar">
+          <span class="risk-label">Risiko</span>
+          <div class="risk-dots">
+            <div class="risk-dot filled"></div>
+            <div class="risk-dot filled"></div>
+            <div class="risk-dot filled"></div>
+            <div class="risk-dot"></div>
+            <div class="risk-dot"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ── Einzelaktien ── -->
+<div class="section" data-section="aktie">
+  <div class="section-header">
+    <span class="section-title">💰 Einzelaktien</span>
+    <span class="section-count">10 Titel</span>
+  </div>
+  <div class="cards-grid">
+
+    <div class="item-card aktie" data-type="aktie">
+      <div class="card-top">
+        <div class="card-name">Apple</div>
+        <div class="card-ticker">AAPL</div>
+      </div>
+      <div class="card-desc">Weltgrößtes Unternehmen nach Marktkapitalisierung. iPhone, Mac, Services (App Store, Apple Music, iCloud). Extrem starke Marke und Kundenbindung. Rückkaufprogramme stützen den Kurs langfristig.</div>
+      <div class="card-footer">
+        <div class="card-return">
+          <span class="return-label">Ø Rendite 10 J.</span>
+          <span class="return-value">24,0 %</span>
+        </div>
+        <div class="risk-bar">
+          <span class="risk-label">Risiko</span>
+          <div class="risk-dots">
+            <div class="risk-dot filled"></div>
+            <div class="risk-dot filled"></div>
+            <div class="risk-dot filled"></div>
+            <div class="risk-dot"></div>
+            <div class="risk-dot"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="item-card aktie" data-type="aktie">
+      <div class="card-top">
+        <div class="card-name">Microsoft</div>
+        <div class="card-ticker">MSFT</div>
+      </div>
+      <div class="card-desc">Cloud-Riese mit Azure, Office 365 und LinkedIn. Starkes KI-Engagement durch Partnerschaft mit OpenAI. Stabile Einnahmen durch Abonnementmodelle. Eines der wenigen Unternehmen mit AAA-Kreditrating.</div>
+      <div class="card-footer">
+        <div class="card-return">
+          <span class="return-label">Ø Rendite 10 J.</span>
+          <span class="return-value">27,0 %</span>
+        </div>
+        <div class="risk-bar">
+          <span class="risk-label">Risiko</span>
+          <div class="risk-dots">
+            <div class="risk-dot filled"></div>
+            <div class="risk-dot filled"></div>
+            <div class="risk-dot filled"></div>
+            <div class="risk-dot"></div>
+            <div class="risk-dot"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="item-card aktie" data-type="aktie">
+      <div class="card-top">
+        <div class="card-name">Nvidia</div>
+        <div class="card-ticker">NVDA</div>
+      </div>
+      <div class="card-desc">Marktführer bei KI-Grafikchips (GPUs). Profitiert massiv vom KI-Boom — Rechenzentren, autonomes Fahren, Gaming. Außergewöhnliche Rendite der letzten Jahre, aber auch extreme Bewertung. Nicht repräsentativ für die Zukunft.</div>
+      <div class="card-footer">
+        <div class="card-return">
+          <span class="return-label">Ø Rendite 10 J.</span>
+          <span class="return-value">55,0 %</span>
+        </div>
+        <div class="risk-bar">
+          <span class="risk-label">Risiko</span>
+          <div class="risk-dots">
+            <div class="risk-dot filled"></div>
+            <div class="risk-dot filled"></div>
+            <div class="risk-dot filled"></div>
+            <div class="risk-dot filled"></div>
+            <div class="risk-dot filled"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="item-card aktie" data-type="aktie">
+      <div class="card-top">
+        <div class="card-name">Amazon</div>
+        <div class="card-ticker">AMZN</div>
+      </div>
+      <div class="card-desc">E-Commerce-Weltmarktführer und Cloud-Pionier mit AWS. Logistiknetzwerk, Prime-Abo, Alexa und Werbeplattform. AWS ist der profitabelste Bereich und treibt das Gesamtergebnis stark an.</div>
+      <div class="card-footer">
+        <div class="card-return">
+          <span class="return-label">Ø Rendite 10 J.</span>
+          <span class="return-value">22,0 %</span>
+        </div>
+        <div class="risk-bar">
+          <span class="risk-label">Risiko</span>
+          <div class="risk-dots">
+            <div class="risk-dot filled"></div>
+            <div class="risk-dot filled"></div>
+            <div class="risk-dot filled"></div>
+            <div class="risk-dot filled"></div>
+            <div class="risk-dot"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="item-card aktie" data-type="aktie">
+      <div class="card-top">
+        <div class="card-name">Alphabet (Google)</div>
+        <div class="card-ticker">GOOGL</div>
+      </div>
+      <div class="card-desc">Mutterkonzern von Google, YouTube, Google Cloud und Waymo (autonomes Fahren). Über 90 % Marktanteil bei Suchmaschinen. Werbegeschäft ist Haupteinnahmequelle, Cloud wächst stark.</div>
+      <div class="card-footer">
+        <div class="card-return">
+          <span class="return-label">Ø Rendite 10 J.</span>
+          <span class="return-value">19,0 %</span>
+        </div>
+        <div class="risk-bar">
+          <span class="risk-label">Risiko</span>
+          <div class="risk-dots">
+            <div class="risk-dot filled"></div>
+            <div class="risk-dot filled"></div>
+            <div class="risk-dot filled"></div>
+            <div class="risk-dot"></div>
+            <div class="risk-dot"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="item-card aktie" data-type="aktie">
+      <div class="card-top">
+        <div class="card-name">Meta Platforms</div>
+        <div class="card-ticker">META</div>
+      </div>
+      <div class="card-desc">Facebook, Instagram, WhatsApp und Threads unter einem Dach. Weltweit größtes soziales Netzwerk. Starkes Werbegeschäft, aber abhängig von Datenschutzregulierung. Investitionen in KI und VR/AR (Metaverse).</div>
+      <div class="card-footer">
+        <div class="card-return">
+          <span class="return-label">Ø Rendite 10 J.</span>
+          <span class="return-value">14,0 %</span>
+        </div>
+        <div class="risk-bar">
+          <span class="risk-label">Risiko</span>
+          <div class="risk-dots">
+            <div class="risk-dot filled"></div>
+            <div class="risk-dot filled"></div>
+            <div class="risk-dot filled"></div>
+            <div class="risk-dot filled"></div>
+            <div class="risk-dot"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="item-card aktie" data-type="aktie">
+      <div class="card-top">
+        <div class="card-name">Berkshire Hathaway</div>
+        <div class="card-ticker">BRK.B</div>
+      </div>
+      <div class="card-desc">Warren Buffetts legendäre Holding: Versicherungen (GEICO), Energie, Bahn, und große Aktienpakete in Apple, Coca-Cola & Co. Sehr defensiv und langfristig ausgerichtet. Gilt als "sicherster" Einzeltitel im Portfolio.</div>
+      <div class="card-footer">
+        <div class="card-return">
+          <span class="return-label">Ø Rendite p.a.</span>
+          <span class="return-value">11,5 %</span>
+        </div>
+        <div class="risk-bar">
+          <span class="risk-label">Risiko</span>
+          <div class="risk-dots">
+            <div class="risk-dot filled"></div>
+            <div class="risk-dot filled"></div>
+            <div class="risk-dot"></div>
+            <div class="risk-dot"></div>
+            <div class="risk-dot"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="item-card aktie" data-type="aktie">
+      <div class="card-top">
+        <div class="card-name">Tesla</div>
+        <div class="card-ticker">TSLA</div>
+      </div>
+      <div class="card-desc">Pionier bei Elektroautos und Energiespeichern. Zusätzlich Solardächer, Supercharger-Netzwerk und ambitionierte KI/Robotik-Projekte. Extrem volatile Aktie — starke Abhängigkeit von Elon Musk und Marktstimmung.</div>
+      <div class="card-footer">
+        <div class="card-return">
+          <span class="return-label">Ø Rendite 10 J.</span>
+          <span class="return-value">31,0 %</span>
+        </div>
+        <div class="risk-bar">
+          <span class="risk-label">Risiko</span>
+          <div class="risk-dots">
+            <div class="risk-dot filled"></div>
+            <div class="risk-dot filled"></div>
+            <div class="risk-dot filled"></div>
+            <div class="risk-dot filled"></div>
+            <div class="risk-dot filled"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="item-card aktie" data-type="aktie">
+      <div class="card-top">
+        <div class="card-name">SAP</div>
+        <div class="card-ticker">SAP.DE</div>
+      </div>
+      <div class="card-desc">Deutschlands wertvollstes Unternehmen — Weltmarktführer für Enterprise-Software (ERP). Transformation hin zur Cloud-Plattform S/4HANA läuft erfolgreich. Breite Kundenbasis in Industrie, Handel und Dienstleistung weltweit.</div>
+      <div class="card-footer">
+        <div class="card-return">
+          <span class="return-label">Ø Rendite p.a.</span>
+          <span class="return-value">12,0 %</span>
+        </div>
+        <div class="risk-bar">
+          <span class="risk-label">Risiko</span>
+          <div class="risk-dots">
+            <div class="risk-dot filled"></div>
+            <div class="risk-dot filled"></div>
+            <div class="risk-dot filled"></div>
+            <div class="risk-dot"></div>
+            <div class="risk-dot"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="item-card aktie" data-type="aktie">
+      <div class="card-top">
+        <div class="card-name">Allianz</div>
+        <div class="card-ticker">ALV.DE</div>
+      </div>
+      <div class="card-desc">Einer der weltgrößten Versicherungs- und Vermögensverwaltungskonzerne. Solide Dividende, defensive Geschäftsmodell. PIMCO gehört ebenfalls zum Konzern. Gut geeignet als stabilisierender Bestandteil im Portfolio.</div>
+      <div class="card-footer">
+        <div class="card-return">
+          <span class="return-label">Ø Rendite p.a.</span>
+          <span class="return-value">8,5 %</span>
+        </div>
+        <div class="risk-bar">
+          <span class="risk-label">Risiko</span>
+          <div class="risk-dots">
+            <div class="risk-dot filled"></div>
+            <div class="risk-dot filled"></div>
+            <div class="risk-dot"></div>
+            <div class="risk-dot"></div>
+            <div class="risk-dot"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ── Konservativ ── -->
+<div class="section" data-section="anleihe etf">
+  <div class="section-header">
+    <span class="section-title">🔒 Konservative Anlagen</span>
+    <span class="section-count">3 Produkte</span>
+  </div>
+  <div class="cards-grid">
+
+    <div class="item-card anleihe" data-type="anleihe">
+      <div class="card-top">
+        <div class="card-name">iShares Global Bonds</div>
+        <div class="card-ticker">IGLO</div>
+      </div>
+      <div class="card-desc">Globale Staatsanleihen aus Industrieländern — sehr geringes Ausfallrisiko. Schützt das Portfolio in Krisenzeiten und reduziert Gesamtschwankungen. Gut als Beimischung für sicherheitsorientierte Anleger ab 50+ Jahren.</div>
+      <div class="card-footer">
+        <div class="card-return">
+          <span class="return-label">Ø Rendite p.a.</span>
+          <span class="return-value">2,0 %</span>
+        </div>
+        <div class="risk-bar">
+          <span class="risk-label">Risiko</span>
+          <div class="risk-dots">
+            <div class="risk-dot filled"></div>
+            <div class="risk-dot"></div>
+            <div class="risk-dot"></div>
+            <div class="risk-dot"></div>
+            <div class="risk-dot"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="item-card anleihe" data-type="anleihe">
+      <div class="card-top">
+        <div class="card-name">iShares EM Bonds</div>
+        <div class="card-ticker">EMBE</div>
+      </div>
+      <div class="card-desc">Anleihen aus Schwellenländern (Emerging Markets) wie Brasilien, Indonesien oder Südafrika. Höhere Zinsen als bei Staatsanleihen der Industrieländer, aber auch höheres Ausfallrisiko und Währungsschwankungen.</div>
+      <div class="card-footer">
+        <div class="card-return">
+          <span class="return-label">Ø Rendite p.a.</span>
+          <span class="return-value">4,5 %</span>
+        </div>
+        <div class="risk-bar">
+          <span class="risk-label">Risiko</span>
+          <div class="risk-dots">
+            <div class="risk-dot filled"></div>
+            <div class="risk-dot filled"></div>
+            <div class="risk-dot filled"></div>
+            <div class="risk-dot"></div>
+            <div class="risk-dot"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="item-card etf" data-type="etf">
+      <div class="card-top">
+        <div class="card-name">iShares World REIT</div>
+        <div class="card-ticker">IWDP</div>
+      </div>
+      <div class="card-desc">Immobilien-ETF mit börsennotierten Immobiliengesellschaften (REITs) weltweit. Profitiert von Mieteinnahmen und Immobilienwertsteigerungen. Hohe Ausschüttungen, aber empfindlich gegenüber steigenden Zinsen.</div>
+      <div class="card-footer">
+        <div class="card-return">
+          <span class="return-label">Ø Rendite p.a.</span>
+          <span class="return-value">7,0 %</span>
+        </div>
+        <div class="risk-bar">
+          <span class="risk-label">Risiko</span>
+          <div class="risk-dots">
+            <div class="risk-dot filled"></div>
+            <div class="risk-dot filled"></div>
+            <div class="risk-dot filled"></div>
+            <div class="risk-dot"></div>
+            <div class="risk-dot"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<p class="disclaimer">
+  Historische Renditen sind Durchschnittswerte und keine Garantie für zukünftige Ergebnisse.<br>
+  Diese Seite dient zur Information und stellt keine Anlageberatung dar. Bitte konsultiere einen unabhängigen Finanzberater.
+</p>
+
+<script>
+  function filter(type) {
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    event.currentTarget.classList.add('active');
+
+    document.querySelectorAll('.item-card').forEach(card => {
+      if (type === 'all' || card.dataset.type === type) {
+        card.classList.remove('hidden');
+      } else {
+        card.classList.add('hidden');
+      }
+    });
+
+    // Hide empty sections
+    document.querySelectorAll('.section').forEach(sec => {
+      const visible = sec.querySelectorAll('.item-card:not(.hidden)');
+      sec.classList.toggle('hidden', visible.length === 0);
+    });
+  }
+</script>
+
+</body>
+</html>

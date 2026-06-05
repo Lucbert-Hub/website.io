@@ -37,7 +37,7 @@
 
   header {
     max-width: 760px;
-    margin: 0 auto 3rem;
+    margin: 0 auto 2.5rem;
     text-align: center;
     animation: fadeUp .6s ease both;
   }
@@ -56,6 +56,46 @@
     font-size: .95rem;
   }
 
+  /* ── Nav Button ── */
+  .nav-bar {
+    max-width: 900px;
+    margin: 0 auto 1.5rem;
+    display: flex;
+    justify-content: flex-end;
+    animation: fadeUp .5s ease both;
+  }
+
+  .nav-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: .5rem;
+    background: linear-gradient(135deg, rgba(200,240,96,0.12), rgba(200,240,96,0.05));
+    border: 1px solid rgba(200,240,96,0.35);
+    color: var(--accent);
+    font-family: var(--font-body);
+    font-size: .85rem;
+    font-weight: 500;
+    padding: .55rem 1.1rem;
+    border-radius: 99px;
+    cursor: pointer;
+    text-decoration: none;
+    transition: background .2s, border-color .2s, transform .15s;
+  }
+  .nav-btn:hover {
+    background: linear-gradient(135deg, rgba(200,240,96,0.22), rgba(200,240,96,0.10));
+    border-color: rgba(200,240,96,0.6);
+    transform: translateY(-1px);
+  }
+  .nav-btn svg {
+    width: 15px; height: 15px;
+    stroke: currentColor;
+    fill: none;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    flex-shrink: 0;
+  }
+
   .layout {
     max-width: 900px;
     margin: 0 auto;
@@ -67,6 +107,7 @@
 
   @media(max-width: 700px) {
     .layout { grid-template-columns: 1fr; }
+    .nav-bar { justify-content: center; }
   }
 
   .card {
@@ -87,6 +128,93 @@
     margin-bottom: 1.5rem;
   }
 
+  /* ── Preset Dropdown ── */
+  .preset-section {
+    margin-bottom: 1.5rem;
+    padding-bottom: 1.25rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .preset-label {
+    font-size: .72rem;
+    color: var(--muted);
+    letter-spacing: .07em;
+    text-transform: uppercase;
+    margin-bottom: .6rem;
+  }
+
+  .preset-select-wrap {
+    position: relative;
+  }
+
+  .preset-select-wrap::after {
+    content: '';
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 0; height: 0;
+    border-left: 4px solid transparent;
+    border-right: 4px solid transparent;
+    border-top: 5px solid var(--muted);
+    pointer-events: none;
+  }
+
+  select#preset {
+    width: 100%;
+    appearance: none;
+    -webkit-appearance: none;
+    background: var(--surface2);
+    border: 1px solid var(--border2);
+    border-radius: 9px;
+    color: var(--text);
+    font-family: var(--font-body);
+    font-size: .88rem;
+    font-weight: 400;
+    padding: .6rem 2rem .6rem .85rem;
+    cursor: pointer;
+    outline: none;
+    transition: border-color .2s;
+  }
+  select#preset:hover { border-color: rgba(255,255,255,0.25); }
+  select#preset:focus { border-color: rgba(200,240,96,0.5); }
+
+  select#preset option {
+    background: #1e2026;
+    color: #f0ede8;
+  }
+
+  .preset-info {
+    margin-top: .55rem;
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+    min-height: 22px;
+  }
+
+  .preset-badge {
+    font-size: .72rem;
+    padding: .2rem .6rem;
+    border-radius: 99px;
+    font-weight: 500;
+    letter-spacing: .04em;
+    opacity: 0;
+    transform: scale(.9);
+    transition: opacity .25s, transform .25s;
+  }
+  .preset-badge.show { opacity: 1; transform: scale(1); }
+  .preset-badge.etf   { background: rgba(96,212,240,0.12); color: var(--accent2); border: 1px solid rgba(96,212,240,0.25); }
+  .preset-badge.aktie { background: rgba(200,240,96,0.10); color: var(--accent); border: 1px solid rgba(200,240,96,0.22); }
+  .preset-badge.index { background: rgba(240,128,106,0.10); color: var(--danger); border: 1px solid rgba(240,128,106,0.22); }
+  .preset-badge.anleihe { background: rgba(180,180,180,0.10); color: #b4b4b4; border: 1px solid rgba(180,180,180,0.2); }
+
+  .preset-desc {
+    font-size: .78rem;
+    color: var(--muted);
+    line-height: 1.4;
+  }
+
+  /* ── Range Fields ── */
   .field { margin-bottom: 1.25rem; }
   .field label {
     display: flex;
@@ -125,6 +253,7 @@
   }
   input[type=range]::-webkit-slider-thumb:hover { transform: scale(1.2); }
 
+  /* ── Results ── */
   .results {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -172,14 +301,55 @@
     margin-top: 1rem;
   }
 
-  .disclaimer {
+  /* ── Bottom Nav Button ── */
+  .bottom-nav {
     max-width: 900px;
     margin: 1.5rem auto 0;
+    display: flex;
+    justify-content: center;
+    animation: fadeUp .7s .35s ease both;
+  }
+
+  .bottom-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: .6rem;
+    background: rgba(200,240,96,0.08);
+    border: 1px solid rgba(200,240,96,0.3);
+    color: var(--accent);
+    font-family: var(--font-body);
+    font-size: .9rem;
+    font-weight: 500;
+    padding: .75rem 1.8rem;
+    border-radius: 99px;
+    cursor: pointer;
+    text-decoration: none;
+    transition: background .2s, border-color .2s, transform .15s, box-shadow .2s;
+    letter-spacing: .02em;
+  }
+  .bottom-btn:hover {
+    background: rgba(200,240,96,0.15);
+    border-color: rgba(200,240,96,0.55);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 24px rgba(200,240,96,0.12);
+  }
+  .bottom-btn svg {
+    width: 16px; height: 16px;
+    stroke: currentColor;
+    fill: none;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  .disclaimer {
+    max-width: 900px;
+    margin: 1.25rem auto 0;
     font-size: .75rem;
     color: var(--muted);
     text-align: center;
     line-height: 1.6;
-    animation: fadeUp .7s .3s ease both;
+    animation: fadeUp .7s .4s ease both;
   }
 
   @keyframes fadeUp {
@@ -195,10 +365,70 @@
   <p>Wie viel wächst dein Investment über die Zeit?</p>
 </header>
 
+<!-- Top Navigation Button -->
+<div class="nav-bar">
+  <a href="secondpage.html" class="nav-btn">
+    <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+    Zur zweiten Seite
+  </a>
+</div>
+
 <div class="layout">
   <!-- Controls -->
   <div class="card">
     <p class="card-title">Parameter</p>
+
+    <!-- Preset Dropdown -->
+    <div class="preset-section">
+      <p class="preset-label">Schnellauswahl — ETF / Aktie / Index</p>
+      <div class="preset-select-wrap">
+        <select id="preset" onchange="applyPreset()">
+          <option value="">— Manuell eingeben —</option>
+          <optgroup label="🌍 Welt-ETFs">
+            <option value="msci_world|8.5|etf|Globale Streuung über ~1.500 Aktien aus Industrieländern">iShares MSCI World (IWDA) — Ø 8,5 %</option>
+            <option value="sp500|10.2|etf|500 größte US-Unternehmen, historisch stärkste Performance">Vanguard S&amp;P 500 (VUSA) — Ø 10,2 %</option>
+            <option value="msci_acwi|8.0|etf|MSCI ACWI: Industrie- und Schwellenländer weltweit">MSCI ACWI IMI (SPYI) — Ø 8,0 %</option>
+            <option value="ftse_all|7.8|etf|Vanguard All-World: über 3.700 Aktien global">Vanguard FTSE All-World (VWRL) — Ø 7,8 %</option>
+          </optgroup>
+          <optgroup label="🇩🇪 Deutschland / Europa">
+            <option value="dax|7.2|index|Deutschlands 40 größte börsennotierte Unternehmen">DAX 40 ETF (EXS1) — Ø 7,2 %</option>
+            <option value="euro_stoxx|6.8|etf|Die 50 größten Unternehmen der Eurozone">Euro Stoxx 50 (MEUD) — Ø 6,8 %</option>
+            <option value="msci_europe|6.5|etf|Breite Streuung über europäische Industrieländer">MSCI Europe (IMEU) — Ø 6,5 %</option>
+          </optgroup>
+          <optgroup label="📈 Sektor-ETFs">
+            <option value="nasdaq|14.5|etf|Tech-lastig: Apple, Microsoft, Nvidia, Amazon, Meta">Invesco Nasdaq 100 (EQQQ) — Ø 14,5 %</option>
+            <option value="msci_tech|13.0|etf|Globale Technologieunternehmen weltweit">iShares Global Tech (QDVE) — Ø 13,0 %</option>
+            <option value="clean_energy|5.5|etf|Erneuerbare Energien, höheres Risiko &amp; Schwankung">iShares Clean Energy (IQQH) — Ø 5,5 %</option>
+            <option value="healthcare|9.0|etf|Pharma, Biotech &amp; Medizintechnik weltweit">iShares Healthcare (HEAL) — Ø 9,0 %</option>
+          </optgroup>
+          <optgroup label="🌱 Nachhaltig (ESG)">
+            <option value="msci_world_esg|7.5|etf|MSCI World mit ESG-Filterung nach Nachhaltigkeitskriterien">MSCI World ESG (SUWS) — Ø 7,5 %</option>
+            <option value="sp500_esg|9.5|etf|S&amp;P 500 ESG: Top US-Unternehmen mit ESG-Score">S&amp;P 500 ESG (SUSP) — Ø 9,5 %</option>
+          </optgroup>
+          <optgroup label="💰 Einzelaktien">
+            <option value="apple|24.0|aktie|Historisch sehr stark, aber Konzentrations­risiko">Apple (AAPL) — Ø 24,0 % (10 J.)</option>
+            <option value="microsoft|27.0|aktie|Starkes Cloud-Wachstum, Azure &amp; KI-Geschäft">Microsoft (MSFT) — Ø 27,0 % (10 J.)</option>
+            <option value="nvidia|55.0|aktie|Außergewöhnlich, durch KI-Boom – nicht repräsentativ">Nvidia (NVDA) — Ø 55,0 % (10 J.)</option>
+            <option value="amazon|22.0|aktie|E-Commerce &amp; AWS-Cloud, starkes Wachstum">Amazon (AMZN) — Ø 22,0 % (10 J.)</option>
+            <option value="alphabet|19.0|aktie|Google-Mutter: Suche, YouTube, Cloud &amp; KI">Alphabet (GOOGL) — Ø 19,0 % (10 J.)</option>
+            <option value="meta|14.0|aktie|Facebook, Instagram, WhatsApp – Werbegeschäft">Meta (META) — Ø 14,0 % (10 J.)</option>
+            <option value="berkshire|11.5|aktie|Warren Buffetts Holding, defensiv &amp; langfristig">Berkshire Hathaway (BRK.B) — Ø 11,5 %</option>
+            <option value="tesla|31.0|aktie|Sehr hohe Volatilität, E-Auto &amp; Energiespeicher">Tesla (TSLA) — Ø 31,0 % (10 J.)</option>
+            <option value="sap|12.0|aktie|Deutschlands größtes Software-Unternehmen">SAP (SAP.DE) — Ø 12,0 %</option>
+            <option value="allianz|8.5|aktie|Globaler Versicherungskonzern, defensive Dividende">Allianz (ALV.DE) — Ø 8,5 %</option>
+          </optgroup>
+          <optgroup label="🔒 Konservativ">
+            <option value="bonds_global|2.0|anleihe|Globale Staatsanleihen, sehr geringes Risiko">iShares Global Bonds (IGLO) — Ø 2,0 %</option>
+            <option value="bonds_em|4.5|anleihe|Schwellenländer-Anleihen, höheres Risiko als IG">iShares EM Bonds (EMBE) — Ø 4,5 %</option>
+            <option value="reit|7.0|etf|Immobilien-ETF: REITS weltweit, Dividendenertrag">iShares World REIT (IWDP) — Ø 7,0 %</option>
+          </optgroup>
+        </select>
+      </div>
+      <div class="preset-info">
+        <span class="preset-badge" id="presetBadge"></span>
+        <span class="preset-desc" id="presetDesc"></span>
+      </div>
+    </div>
 
     <div class="field">
       <label>Startkapital <span id="lStart">1.000 €</span></label>
@@ -217,7 +447,7 @@
 
     <div class="field">
       <label>Jährl. Rendite <span id="lReturn">7 %</span></label>
-      <input type="range" id="ret" min="1" max="20" step="0.5" value="7">
+      <input type="range" id="ret" min="1" max="60" step="0.5" value="7">
     </div>
 
     <div class="field">
@@ -253,15 +483,61 @@
   </div>
 </div>
 
+<!-- Bottom Button -->
+<div class="bottom-nav">
+  <a href="secondpage.html" class="bottom-btn">
+    <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+    Zur zweiten Seite wechseln
+    <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+  </a>
+</div>
+
 <p class="disclaimer">
   Diese Berechnung dient nur zur Orientierung und stellt keine Anlageberatung dar.<br>
-  Vergangene Renditen sind keine Garantie für künftige Ergebnisse.
+  Vergangene Renditen sind keine Garantie für künftige Ergebnisse. Historische Ø-Renditen basieren auf langjährigen Durchschnittswerten.
 </p>
 
 <script>
   const fmt = v => v >= 1e6
     ? (v/1e6).toFixed(2).replace('.',',') + ' Mio. €'
     : Math.round(v).toLocaleString('de-DE') + ' €';
+
+  // Preset data
+  const presets = {};
+  document.querySelectorAll('#preset option[value]').forEach(opt => {
+    const v = opt.value;
+    if (!v) return;
+    const parts = v.split('|');
+    if (parts.length === 4) {
+      presets[v] = { ret: parseFloat(parts[1]), type: parts[2], desc: parts[3] };
+    }
+  });
+
+  function applyPreset() {
+    const sel = document.getElementById('preset');
+    const val = sel.value;
+    const badge = document.getElementById('presetBadge');
+    const desc  = document.getElementById('presetDesc');
+
+    if (!val || !presets[val]) {
+      badge.className = 'preset-badge';
+      desc.textContent = '';
+      return;
+    }
+
+    const p = presets[val];
+    const retSlider = document.getElementById('ret');
+    retSlider.value = Math.min(Math.max(p.ret, 1), 60);
+    document.getElementById('lReturn').textContent = p.ret.toString().replace('.', ',') + ' %';
+
+    // Badge
+    const typeLabels = { etf: 'ETF', aktie: 'Aktie', index: 'Index', anleihe: 'Anleihe' };
+    badge.textContent = typeLabels[p.type] || p.type;
+    badge.className = 'preset-badge show ' + p.type;
+    desc.textContent = p.desc;
+
+    calc();
+  }
 
   function calc() {
     const start   = +document.getElementById('start').value;
@@ -363,13 +639,19 @@
     ['start', 'lStart', v => Math.round(v).toLocaleString('de-DE') + ' €'],
     ['rate',  'lRate',  v => Math.round(v).toLocaleString('de-DE') + ' €'],
     ['years', 'lYears', v => v + ' Jahre'],
-    ['ret',   'lReturn',v => v + ' %'],
-    ['infl',  'lInfl',  v => v + ' %'],
+    ['ret',   'lReturn',v => parseFloat(v).toString().replace('.',',') + ' %'],
+    ['infl',  'lInfl',  v => parseFloat(v).toString().replace('.',',') + ' %'],
   ];
   fields.forEach(([id, lbl, fmt]) => {
     const el = document.getElementById(id);
     el.addEventListener('input', () => {
       document.getElementById(lbl).textContent = fmt(el.value);
+      // Reset preset selection if user manually changes return slider
+      if (id === 'ret') {
+        document.getElementById('preset').value = '';
+        document.getElementById('presetBadge').className = 'preset-badge';
+        document.getElementById('presetDesc').textContent = '';
+      }
       calc();
     });
   });

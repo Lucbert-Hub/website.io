@@ -7,6 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -21,6 +22,7 @@
     --accent: #c8f060;
     --accent2: #60d4f0;
     --danger: #f0806a;
+    --amber: #f0c060;
     --font-display: 'DM Serif Display', serif;
     --font-body: 'DM Sans', sans-serif;
     --radius: 14px;
@@ -41,7 +43,6 @@
     text-align: center;
     animation: fadeUp .6s ease both;
   }
-
   header h1 {
     font-family: var(--font-display);
     font-size: clamp(2rem, 6vw, 3.2rem);
@@ -50,21 +51,16 @@
     line-height: 1.15;
     margin-bottom: .5rem;
   }
+  header p { color: var(--muted); font-size: .95rem; }
 
-  header p {
-    color: var(--muted);
-    font-size: .95rem;
-  }
-
-  /* ── Nav Button ── */
   .nav-bar {
     max-width: 900px;
     margin: 0 auto 1.5rem;
     display: flex;
     justify-content: flex-end;
+    gap: .75rem;
     animation: fadeUp .5s ease both;
   }
-
   .nav-btn {
     display: inline-flex;
     align-items: center;
@@ -82,19 +78,35 @@
     transition: background .2s, border-color .2s, transform .15s;
   }
   .nav-btn:hover {
-    background: linear-gradient(135deg, rgba(200,240,96,0.22), rgba(200,240,96,0.10));
+    background: rgba(200,240,96,0.2);
     border-color: rgba(200,240,96,0.6);
     transform: translateY(-1px);
   }
-  .nav-btn svg {
-    width: 15px; height: 15px;
-    stroke: currentColor;
-    fill: none;
-    stroke-width: 2;
-    stroke-linecap: round;
-    stroke-linejoin: round;
-    flex-shrink: 0;
+  .nav-btn svg { width: 15px; height: 15px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; }
+
+  /* PDF Button */
+  .pdf-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: .5rem;
+    background: rgba(96,212,240,0.08);
+    border: 1px solid rgba(96,212,240,0.3);
+    color: var(--accent2);
+    font-family: var(--font-body);
+    font-size: .85rem;
+    font-weight: 500;
+    padding: .55rem 1.1rem;
+    border-radius: 99px;
+    cursor: pointer;
+    transition: background .2s, border-color .2s, transform .15s;
   }
+  .pdf-btn:hover {
+    background: rgba(96,212,240,0.16);
+    border-color: rgba(96,212,240,0.55);
+    transform: translateY(-1px);
+  }
+  .pdf-btn svg { width: 15px; height: 15px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  .pdf-btn.loading { opacity: .6; pointer-events: none; }
 
   .layout {
     max-width: 900px;
@@ -104,10 +116,9 @@
     gap: 1.5rem;
     align-items: start;
   }
-
   @media(max-width: 700px) {
     .layout { grid-template-columns: 1fr; }
-    .nav-bar { justify-content: center; }
+    .nav-bar { justify-content: center; flex-wrap: wrap; }
   }
 
   .card {
@@ -117,7 +128,6 @@
     padding: 1.5rem;
     animation: fadeUp .6s ease both;
   }
-
   .card:nth-child(2) { animation-delay: .1s; }
 
   .card-title {
@@ -128,139 +138,136 @@
     margin-bottom: 1.5rem;
   }
 
-  /* ── Preset Dropdown ── */
+  /* Preset */
   .preset-section {
     margin-bottom: 1.5rem;
     padding-bottom: 1.25rem;
     border-bottom: 1px solid var(--border);
   }
-
   .preset-label {
-    font-size: .72rem;
-    color: var(--muted);
-    letter-spacing: .07em;
-    text-transform: uppercase;
-    margin-bottom: .6rem;
+    font-size: .72rem; color: var(--muted);
+    letter-spacing: .07em; text-transform: uppercase; margin-bottom: .6rem;
   }
-
-  .preset-select-wrap {
-    position: relative;
-  }
-
+  .preset-select-wrap { position: relative; }
   .preset-select-wrap::after {
-    content: '';
-    position: absolute;
-    right: 12px;
-    top: 50%;
-    transform: translateY(-50%);
-    width: 0; height: 0;
-    border-left: 4px solid transparent;
-    border-right: 4px solid transparent;
-    border-top: 5px solid var(--muted);
-    pointer-events: none;
+    content: ''; position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
+    width: 0; height: 0; border-left: 4px solid transparent; border-right: 4px solid transparent;
+    border-top: 5px solid var(--muted); pointer-events: none;
   }
-
   select#preset {
-    width: 100%;
-    appearance: none;
-    -webkit-appearance: none;
-    background: var(--surface2);
-    border: 1px solid var(--border2);
-    border-radius: 9px;
-    color: var(--text);
-    font-family: var(--font-body);
-    font-size: .88rem;
-    font-weight: 400;
-    padding: .6rem 2rem .6rem .85rem;
-    cursor: pointer;
-    outline: none;
-    transition: border-color .2s;
+    width: 100%; appearance: none; -webkit-appearance: none;
+    background: var(--surface2); border: 1px solid var(--border2); border-radius: 9px;
+    color: var(--text); font-family: var(--font-body); font-size: .88rem; font-weight: 400;
+    padding: .6rem 2rem .6rem .85rem; cursor: pointer; outline: none; transition: border-color .2s;
   }
   select#preset:hover { border-color: rgba(255,255,255,0.25); }
   select#preset:focus { border-color: rgba(200,240,96,0.5); }
+  select#preset option { background: #1e2026; color: #f0ede8; }
 
-  select#preset option {
-    background: #1e2026;
-    color: #f0ede8;
-  }
-
-  .preset-info {
-    margin-top: .55rem;
-    display: flex;
-    align-items: center;
-    gap: .5rem;
-    min-height: 22px;
-  }
-
+  .preset-info { margin-top: .55rem; display: flex; align-items: center; gap: .5rem; min-height: 22px; }
   .preset-badge {
-    font-size: .72rem;
-    padding: .2rem .6rem;
-    border-radius: 99px;
-    font-weight: 500;
-    letter-spacing: .04em;
-    opacity: 0;
-    transform: scale(.9);
-    transition: opacity .25s, transform .25s;
+    font-size: .72rem; padding: .2rem .6rem; border-radius: 99px; font-weight: 500;
+    letter-spacing: .04em; opacity: 0; transform: scale(.9); transition: opacity .25s, transform .25s;
   }
   .preset-badge.show { opacity: 1; transform: scale(1); }
-  .preset-badge.etf   { background: rgba(96,212,240,0.12); color: var(--accent2); border: 1px solid rgba(96,212,240,0.25); }
-  .preset-badge.aktie { background: rgba(200,240,96,0.10); color: var(--accent); border: 1px solid rgba(200,240,96,0.22); }
-  .preset-badge.index { background: rgba(240,128,106,0.10); color: var(--danger); border: 1px solid rgba(240,128,106,0.22); }
+  .preset-badge.etf     { background: rgba(96,212,240,0.12); color: var(--accent2); border: 1px solid rgba(96,212,240,0.25); }
+  .preset-badge.aktie   { background: rgba(200,240,96,0.10); color: var(--accent); border: 1px solid rgba(200,240,96,0.22); }
+  .preset-badge.index   { background: rgba(240,128,106,0.10); color: var(--danger); border: 1px solid rgba(240,128,106,0.22); }
   .preset-badge.anleihe { background: rgba(180,180,180,0.10); color: #b4b4b4; border: 1px solid rgba(180,180,180,0.2); }
+  .preset-desc { font-size: .78rem; color: var(--muted); line-height: 1.4; }
 
-  .preset-desc {
-    font-size: .78rem;
-    color: var(--muted);
-    line-height: 1.4;
-  }
-
-  /* ── Range Fields ── */
+  /* Fields */
   .field { margin-bottom: 1.25rem; }
-  .field label {
-    display: flex;
-    justify-content: space-between;
-    align-items: baseline;
-    font-size: .8rem;
-    color: var(--muted);
-    margin-bottom: .5rem;
-  }
-  .field label span {
-    font-family: var(--font-body);
-    font-weight: 500;
-    font-size: .95rem;
-    color: var(--text);
-  }
+  .field label { display: flex; justify-content: space-between; align-items: baseline; font-size: .8rem; color: var(--muted); margin-bottom: .5rem; }
+  .field label span { font-family: var(--font-body); font-weight: 500; font-size: .95rem; color: var(--text); }
 
   input[type=range] {
-    -webkit-appearance: none;
-    width: 100%;
-    height: 3px;
-    background: var(--surface2);
-    border-radius: 99px;
-    outline: none;
-    cursor: pointer;
+    -webkit-appearance: none; width: 100%; height: 3px;
+    background: var(--surface2); border-radius: 99px; outline: none; cursor: pointer;
   }
-
   input[type=range]::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    width: 18px;
-    height: 18px;
-    border-radius: 50%;
-    background: var(--accent);
-    border: 3px solid var(--bg);
-    box-shadow: 0 0 0 1px var(--accent);
-    transition: transform .15s;
+    -webkit-appearance: none; width: 18px; height: 18px; border-radius: 50%;
+    background: var(--accent); border: 3px solid var(--bg); box-shadow: 0 0 0 1px var(--accent); transition: transform .15s;
   }
   input[type=range]::-webkit-slider-thumb:hover { transform: scale(1.2); }
 
-  /* ── Results ── */
+  /* Steuer Toggle */
+  .tax-section {
+    margin-top: 1.5rem;
+    padding-top: 1.25rem;
+    border-top: 1px solid var(--border);
+  }
+  .tax-toggle-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: .75rem;
+    cursor: pointer;
+  }
+  .tax-toggle-label {
+    font-size: .8rem;
+    color: var(--muted);
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+  }
+  .tax-toggle-label svg { width: 14px; height: 14px; stroke: var(--amber); fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+  .toggle-switch {
+    width: 36px; height: 20px;
+    background: var(--surface2);
+    border: 1px solid var(--border2);
+    border-radius: 99px;
+    position: relative;
+    transition: background .2s, border-color .2s;
+    flex-shrink: 0;
+  }
+  .toggle-switch::after {
+    content: ''; position: absolute;
+    top: 3px; left: 3px;
+    width: 12px; height: 12px;
+    border-radius: 50%;
+    background: var(--muted);
+    transition: transform .2s, background .2s;
+  }
+  .toggle-switch.on { background: rgba(200,240,96,0.15); border-color: rgba(200,240,96,0.4); }
+  .toggle-switch.on::after { transform: translateX(16px); background: var(--accent); }
+
+  .tax-details {
+    overflow: hidden;
+    max-height: 0;
+    transition: max-height .3s ease;
+  }
+  .tax-details.open { max-height: 200px; }
+
+  .tax-info-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: .78rem;
+    color: var(--muted);
+    margin-bottom: .4rem;
+  }
+  .tax-info-row span:last-child { color: var(--text); font-weight: 500; }
+
+  .tax-note {
+    font-size: .72rem;
+    color: var(--muted);
+    line-height: 1.5;
+    margin-top: .6rem;
+    padding: .6rem .75rem;
+    background: rgba(240,192,96,0.06);
+    border: 1px solid rgba(240,192,96,0.15);
+    border-radius: 8px;
+  }
+
+  /* Results */
   .results {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: .75rem;
     margin-bottom: 1.25rem;
   }
-
   .metric {
     background: var(--surface2);
     border: 1px solid var(--border);
@@ -272,83 +279,51 @@
     border-color: rgba(200, 240, 96, 0.25);
     grid-column: 1 / -1;
   }
-  .metric-label {
-    font-size: .72rem;
-    color: var(--muted);
-    letter-spacing: .06em;
-    text-transform: uppercase;
-    margin-bottom: .4rem;
+  .metric.tax-metric {
+    background: rgba(240,192,96,0.06);
+    border-color: rgba(240,192,96,0.2);
+    grid-column: 1 / -1;
   }
-  .metric-value {
-    font-family: var(--font-display);
-    font-size: 1.5rem;
-    font-weight: 400;
-    color: var(--text);
-  }
-  .metric.highlight .metric-value {
-    font-size: 2rem;
-    color: var(--accent);
-  }
-  .metric-sub {
-    font-size: .75rem;
-    color: var(--muted);
-    margin-top: .2rem;
-  }
+  .metric-label { font-size: .72rem; color: var(--muted); letter-spacing: .06em; text-transform: uppercase; margin-bottom: .4rem; }
+  .metric-value { font-family: var(--font-display); font-size: 1.5rem; font-weight: 400; color: var(--text); }
+  .metric.highlight .metric-value { font-size: 2rem; color: var(--accent); }
+  .metric.tax-metric .metric-value { font-size: 1.5rem; color: var(--amber); }
+  .metric-sub { font-size: .75rem; color: var(--muted); margin-top: .2rem; }
 
-  .chart-wrap {
-    position: relative;
-    height: 220px;
-    margin-top: 1rem;
+  /* Tax result rows */
+  .tax-result-block {
+    display: none;
   }
+  .tax-result-block.visible { display: contents; }
 
-  /* ── Bottom Nav Button ── */
+  .chart-wrap { position: relative; height: 220px; margin-top: 1rem; }
+
+  /* Bottom nav */
   .bottom-nav {
     max-width: 900px;
     margin: 1.5rem auto 0;
     display: flex;
     justify-content: center;
+    gap: 1rem;
+    flex-wrap: wrap;
     animation: fadeUp .7s .35s ease both;
   }
-
   .bottom-btn {
-    display: inline-flex;
-    align-items: center;
-    gap: .6rem;
-    background: rgba(200,240,96,0.08);
-    border: 1px solid rgba(200,240,96,0.3);
-    color: var(--accent);
-    font-family: var(--font-body);
-    font-size: .9rem;
-    font-weight: 500;
-    padding: .75rem 1.8rem;
-    border-radius: 99px;
-    cursor: pointer;
-    text-decoration: none;
-    transition: background .2s, border-color .2s, transform .15s, box-shadow .2s;
-    letter-spacing: .02em;
+    display: inline-flex; align-items: center; gap: .6rem;
+    background: rgba(200,240,96,0.08); border: 1px solid rgba(200,240,96,0.3);
+    color: var(--accent); font-family: var(--font-body); font-size: .9rem; font-weight: 500;
+    padding: .75rem 1.8rem; border-radius: 99px; cursor: pointer; text-decoration: none;
+    transition: background .2s, border-color .2s, transform .15s, box-shadow .2s; letter-spacing: .02em;
   }
   .bottom-btn:hover {
-    background: rgba(200,240,96,0.15);
-    border-color: rgba(200,240,96,0.55);
-    transform: translateY(-2px);
-    box-shadow: 0 6px 24px rgba(200,240,96,0.12);
+    background: rgba(200,240,96,0.15); border-color: rgba(200,240,96,0.55);
+    transform: translateY(-2px); box-shadow: 0 6px 24px rgba(200,240,96,0.12);
   }
-  .bottom-btn svg {
-    width: 16px; height: 16px;
-    stroke: currentColor;
-    fill: none;
-    stroke-width: 2;
-    stroke-linecap: round;
-    stroke-linejoin: round;
-  }
+  .bottom-btn svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 
   .disclaimer {
-    max-width: 900px;
-    margin: 1.25rem auto 0;
-    font-size: .75rem;
-    color: var(--muted);
-    text-align: center;
-    line-height: 1.6;
+    max-width: 900px; margin: 1.25rem auto 0; font-size: .75rem;
+    color: var(--muted); text-align: center; line-height: 1.6;
     animation: fadeUp .7s .4s ease both;
   }
 
@@ -365,12 +340,22 @@
   <p>Wie viel wächst dein Investment über die Zeit?</p>
 </header>
 
+<div class="nav-bar">
+  <button class="pdf-btn" onclick="exportPDF()" id="pdfBtn">
+    <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
+    PDF Export
+  </button>
+  <a href="secondpage.html" class="nav-btn">
+    <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+    ETF & Aktien Übersicht
+  </a>
+</div>
+
 <div class="layout">
   <!-- Controls -->
   <div class="card">
     <p class="card-title">Parameter</p>
 
-    <!-- Preset Dropdown -->
     <div class="preset-section">
       <p class="preset-label">Schnellauswahl — ETF / Aktie / Index</p>
       <div class="preset-select-wrap">
@@ -426,25 +411,49 @@
       <label>Startkapital <span id="lStart">1.000 €</span></label>
       <input type="range" id="start" min="0" max="50000" step="500" value="1000">
     </div>
-
     <div class="field">
       <label>Monatliche Rate <span id="lRate">200 €</span></label>
       <input type="range" id="rate" min="0" max="2000" step="50" value="200">
     </div>
-
     <div class="field">
       <label>Anlagedauer <span id="lYears">20 Jahre</span></label>
       <input type="range" id="years" min="1" max="50" step="1" value="20">
     </div>
-
     <div class="field">
       <label>Jährl. Rendite <span id="lReturn">7 %</span></label>
       <input type="range" id="ret" min="1" max="60" step="0.5" value="7">
     </div>
-
     <div class="field">
       <label>Jährl. Inflation <span id="lInfl">2 %</span></label>
       <input type="range" id="infl" min="0" max="10" step="0.5" value="2">
+    </div>
+
+    <!-- Steuerrechner Toggle -->
+    <div class="tax-section">
+      <div class="tax-toggle-row" onclick="toggleTax()">
+        <span class="tax-toggle-label">
+          <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16c0 1.1.9 2 2 2h12a2 2 0 0 0 2-2V8l-6-6z"/><path d="M9 13h6M9 17h6M14 2v6h6"/></svg>
+          Steuerrechner (Abgeltungssteuer)
+        </span>
+        <div class="toggle-switch" id="taxToggle"></div>
+      </div>
+      <div class="tax-details" id="taxDetails">
+        <div class="tax-info-row">
+          <span>Abgeltungssteuer</span><span>25,00 %</span>
+        </div>
+        <div class="tax-info-row">
+          <span>Solidaritätszuschlag</span><span>5,50 % auf Steuer</span>
+        </div>
+        <div class="tax-info-row">
+          <span>Gesamtsteuersatz</span><span>26,375 %</span>
+        </div>
+        <div class="tax-info-row">
+          <span>Sparerpauschbetrag (Single)</span><span>1.000 €</span>
+        </div>
+        <div class="tax-note">
+          ⚠ Vereinfachte Berechnung: Steuer wird einmalig auf den Gesamtgewinn am Ende angewendet. Tatsächliche Besteuerung bei Thesaurierern/Ausschüttern kann abweichen.
+        </div>
+      </div>
     </div>
   </div>
 
@@ -452,7 +461,7 @@
   <div class="card">
     <p class="card-title">Ergebnis</p>
 
-    <div class="results">
+    <div class="results" id="resultsGrid">
       <div class="metric highlight">
         <div class="metric-label">Endwert (nominal)</div>
         <div class="metric-value" id="rTotal">—</div>
@@ -463,9 +472,21 @@
         <div class="metric-value" id="rIn">—</div>
       </div>
       <div class="metric">
-        <div class="metric-label">Zinsgewinn</div>
+        <div class="metric-label">Bruttogewinn</div>
         <div class="metric-value" id="rGain">—</div>
         <div class="metric-sub" id="rFactor">—</div>
+      </div>
+
+      <!-- Steuer-Ergebnisse (nur wenn Toggle an) -->
+      <div class="metric tax-metric tax-result-block" id="taxBlock1">
+        <div class="metric-label">Steuer auf Gewinn</div>
+        <div class="metric-value" id="rTax">—</div>
+        <div class="metric-sub" id="rTaxRate">26,375 % nach Pauschbetrag</div>
+      </div>
+      <div class="metric highlight tax-result-block" id="taxBlock2" style="background: rgba(96,212,240,0.07); border-color: rgba(96,212,240,0.25);">
+        <div class="metric-label">Endwert nach Steuern</div>
+        <div class="metric-value" id="rAfterTax" style="color: var(--accent2);">—</div>
+        <div class="metric-sub" id="rAfterTaxReal">Kaufkraftbereinigt nach Steuern: —</div>
       </div>
     </div>
 
@@ -475,7 +496,6 @@
   </div>
 </div>
 
-<!-- Bottom Button -->
 <div class="bottom-nav">
   <a href="secondpage.html" class="bottom-btn">
     <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
@@ -486,7 +506,7 @@
 
 <p class="disclaimer">
   Diese Berechnung dient nur zur Orientierung und stellt keine Anlageberatung dar.<br>
-  Vergangene Renditen sind keine Garantie für künftige Ergebnisse. Historische Ø-Renditen basieren auf langjährigen Durchschnittswerten.
+  Vergangene Renditen sind keine Garantie für künftige Ergebnisse. Steuerberechnung vereinfacht — kein Ersatz für steuerliche Beratung.
 </p>
 
 <script>
@@ -494,15 +514,26 @@
     ? (v/1e6).toFixed(2).replace('.',',') + ' Mio. €'
     : Math.round(v).toLocaleString('de-DE') + ' €';
 
+  // Tax state
+  let taxEnabled = false;
+
+  function toggleTax() {
+    taxEnabled = !taxEnabled;
+    document.getElementById('taxToggle').classList.toggle('on', taxEnabled);
+    document.getElementById('taxDetails').classList.toggle('open', taxEnabled);
+    document.querySelectorAll('.tax-result-block').forEach(el => {
+      el.classList.toggle('visible', taxEnabled);
+    });
+    calc();
+  }
+
   // Preset data
   const presets = {};
   document.querySelectorAll('#preset option[value]').forEach(opt => {
     const v = opt.value;
     if (!v) return;
     const parts = v.split('|');
-    if (parts.length === 4) {
-      presets[v] = { ret: parseFloat(parts[1]), type: parts[2], desc: parts[3] };
-    }
+    if (parts.length === 4) presets[v] = { ret: parseFloat(parts[1]), type: parts[2], desc: parts[3] };
   });
 
   function applyPreset() {
@@ -510,34 +541,30 @@
     const val = sel.value;
     const badge = document.getElementById('presetBadge');
     const desc  = document.getElementById('presetDesc');
-
     if (!val || !presets[val]) {
-      badge.className = 'preset-badge';
-      desc.textContent = '';
-      return;
+      badge.className = 'preset-badge'; desc.textContent = ''; return;
     }
-
     const p = presets[val];
     const retSlider = document.getElementById('ret');
     retSlider.value = Math.min(Math.max(p.ret, 1), 60);
     document.getElementById('lReturn').textContent = p.ret.toString().replace('.', ',') + ' %';
-
-    // Badge
     const typeLabels = { etf: 'ETF', aktie: 'Aktie', index: 'Index', anleihe: 'Anleihe' };
     badge.textContent = typeLabels[p.type] || p.type;
     badge.className = 'preset-badge show ' + p.type;
     desc.textContent = p.desc;
-
     calc();
   }
 
+  // Store last calc results for PDF
+  let lastResult = {};
+
   function calc() {
-    const start   = +document.getElementById('start').value;
-    const rate    = +document.getElementById('rate').value;
-    const years   = +document.getElementById('years').value;
-    const ret     = +document.getElementById('ret').value / 100;
-    const infl    = +document.getElementById('infl').value / 100;
-    const mr      = ret / 12;
+    const start  = +document.getElementById('start').value;
+    const rate   = +document.getElementById('rate').value;
+    const years  = +document.getElementById('years').value;
+    const ret    = +document.getElementById('ret').value / 100;
+    const infl   = +document.getElementById('infl').value / 100;
+    const mr     = ret / 12;
 
     const labels = [], nomData = [], inData = [];
     let nom = start, invested = start;
@@ -557,11 +584,28 @@
     const gain = nom - invested;
     const factor = invested > 0 ? (nom / invested).toFixed(1) : '—';
 
-    document.getElementById('rTotal').textContent = fmt(nom);
-    document.getElementById('rReal').textContent  = 'Kaufkraftbereinigt: ' + fmt(real);
-    document.getElementById('rIn').textContent    = fmt(invested);
-    document.getElementById('rGain').textContent  = fmt(gain);
+    // Tax calculation
+    const STEUERSATZ = 0.26375;
+    const PAUSCHBETRAG = 1000;
+    const taxableGain = Math.max(0, gain - PAUSCHBETRAG);
+    const taxAmount = taxableGain * STEUERSATZ;
+    const afterTax = nom - taxAmount;
+    const afterTaxReal = afterTax / realFactor;
+
+    lastResult = { start, rate, years, ret: ret*100, infl: infl*100, nom, invested, gain, factor, real, taxAmount, afterTax, afterTaxReal, taxEnabled };
+
+    document.getElementById('rTotal').textContent  = fmt(nom);
+    document.getElementById('rReal').textContent   = 'Kaufkraftbereinigt: ' + fmt(real);
+    document.getElementById('rIn').textContent     = fmt(invested);
+    document.getElementById('rGain').textContent   = fmt(gain);
     document.getElementById('rFactor').textContent = 'Faktor ×' + factor;
+
+    if (taxEnabled) {
+      document.getElementById('rTax').textContent        = fmt(taxAmount);
+      document.getElementById('rTaxRate').textContent    = '26,375 % auf ' + fmt(taxableGain) + ' (nach Pauschbetrag)';
+      document.getElementById('rAfterTax').textContent   = fmt(afterTax);
+      document.getElementById('rAfterTaxReal').textContent = 'Kaufkraftbereinigt nach Steuern: ' + fmt(afterTaxReal);
+    }
 
     updateChart(labels, nomData, inData);
   }
@@ -575,47 +619,20 @@
       data: {
         labels,
         datasets: [
-          {
-            label: 'Endwert',
-            data: nom,
-            borderColor: '#c8f060',
-            backgroundColor: 'rgba(200,240,96,0.08)',
-            borderWidth: 2,
-            fill: true,
-            tension: .4,
-            pointRadius: 0
-          },
-          {
-            label: 'Eingezahlt',
-            data: inv,
-            borderColor: 'rgba(255,255,255,0.2)',
-            backgroundColor: 'rgba(255,255,255,0.03)',
-            borderWidth: 1.5,
-            fill: true,
-            tension: .4,
-            pointRadius: 0,
-            borderDash: [4, 3]
-          }
+          { label: 'Endwert', data: nom, borderColor: '#c8f060', backgroundColor: 'rgba(200,240,96,0.08)', borderWidth: 2, fill: true, tension: .4, pointRadius: 0 },
+          { label: 'Eingezahlt', data: inv, borderColor: 'rgba(255,255,255,0.2)', backgroundColor: 'rgba(255,255,255,0.03)', borderWidth: 1.5, fill: true, tension: .4, pointRadius: 0, borderDash: [4,3] }
         ]
       },
       options: {
-        responsive: true,
-        maintainAspectRatio: false,
+        responsive: true, maintainAspectRatio: false,
         animation: { duration: 400 },
         interaction: { mode: 'index', intersect: false },
         plugins: {
-          legend: {
-            labels: { color: '#7a7875', font: { family: 'DM Sans', size: 11 }, boxWidth: 12, padding: 14 }
-          },
+          legend: { labels: { color: '#7a7875', font: { family: 'DM Sans', size: 11 }, boxWidth: 12, padding: 14 } },
           tooltip: {
-            backgroundColor: '#1e2026',
-            borderColor: 'rgba(255,255,255,0.1)',
-            borderWidth: 1,
-            titleColor: '#f0ede8',
-            bodyColor: '#7a7875',
-            callbacks: {
-              label: ctx => ' ' + ctx.dataset.label + ': ' + Math.round(ctx.raw).toLocaleString('de-DE') + ' €'
-            }
+            backgroundColor: '#1e2026', borderColor: 'rgba(255,255,255,0.1)', borderWidth: 1,
+            titleColor: '#f0ede8', bodyColor: '#7a7875',
+            callbacks: { label: ctx => ' ' + ctx.dataset.label + ': ' + Math.round(ctx.raw).toLocaleString('de-DE') + ' €' }
           }
         },
         scales: {
@@ -626,7 +643,155 @@
     });
   }
 
-  // Update labels live
+  // ── PDF Export ──
+  async function exportPDF() {
+    const btn = document.getElementById('pdfBtn');
+    btn.classList.add('loading');
+    btn.innerHTML = '<svg viewBox="0 0 24 24" style="width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg> Erstelle PDF…';
+
+    await new Promise(r => setTimeout(r, 100));
+
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+    const r = lastResult;
+    const pageW = 210;
+    const margin = 18;
+    const colW = (pageW - margin * 2 - 6) / 2;
+
+    // ── Background
+    doc.setFillColor(14, 15, 17);
+    doc.rect(0, 0, 210, 297, 'F');
+
+    // ── Header bar
+    doc.setFillColor(22, 24, 28);
+    doc.roundedRect(margin, 14, pageW - margin*2, 22, 3, 3, 'F');
+    doc.setTextColor(200, 240, 96);
+    doc.setFontSize(16);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Aktien-Renditerechner', margin + 6, 27.5);
+    doc.setTextColor(122, 120, 117);
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'normal');
+    doc.text('Erstellt am ' + new Date().toLocaleDateString('de-DE', { day:'2-digit', month:'long', year:'numeric' }), pageW - margin - 6, 27.5, { align: 'right' });
+
+    // ── Section helper
+    let y = 46;
+    function sectionTitle(title) {
+      doc.setFontSize(7);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(122, 120, 117);
+      doc.text(title.toUpperCase(), margin, y);
+      doc.setDrawColor(255,255,255, 0.08);
+      doc.setLineWidth(0.2);
+      doc.line(margin + doc.getTextWidth(title.toUpperCase()) + 3, y - 0.5, pageW - margin, y - 0.5);
+      y += 5;
+    }
+
+    function metricBox(x, bY, w, label, value, highlight, amber) {
+      const h = 18;
+      if (highlight) {
+        doc.setFillColor(200,240,96, 0.07*255);
+        doc.setFillColor(28, 36, 14);
+      } else if (amber) {
+        doc.setFillColor(36, 30, 14);
+      } else {
+        doc.setFillColor(30, 32, 38);
+      }
+      doc.roundedRect(x, bY, w, h, 2, 2, 'F');
+
+      doc.setFontSize(6.5);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(122, 120, 117);
+      doc.text(label.toUpperCase(), x + 4, bY + 6);
+
+      doc.setFontSize(highlight ? 13 : 10);
+      doc.setFont('helvetica', 'bold');
+      if (highlight) doc.setTextColor(200, 240, 96);
+      else if (amber) doc.setTextColor(240, 192, 96);
+      else doc.setTextColor(240, 237, 232);
+      doc.text(value, x + 4, bY + 14);
+    }
+
+    // ── Parameter Section
+    sectionTitle('Eingabeparameter');
+    const params = [
+      ['Startkapital', fmt(r.start)],
+      ['Monatliche Rate', fmt(r.rate)],
+      ['Anlagedauer', r.years + ' Jahre'],
+      ['Jährl. Rendite', r.ret.toString().replace('.', ',') + ' %'],
+      ['Jährl. Inflation', r.infl.toString().replace('.', ',') + ' %'],
+    ];
+    params.forEach((p, i) => {
+      const col = i % 2;
+      const row = Math.floor(i / 2);
+      const bX = margin + col * (colW + 6);
+      const bY = y + row * 12;
+      doc.setFillColor(30, 32, 38);
+      doc.roundedRect(bX, bY, colW, 10, 1.5, 1.5, 'F');
+      doc.setFontSize(6.5);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(122, 120, 117);
+      doc.text(p[0], bX + 3, bY + 4.5);
+      doc.setFontSize(8);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(240, 237, 232);
+      doc.text(p[1], bX + colW - 3, bY + 4.5, { align: 'right' });
+    });
+    y += Math.ceil(params.length / 2) * 12 + 8;
+
+    // ── Ergebnis Section
+    sectionTitle('Ergebnis');
+    metricBox(margin, y, pageW - margin*2, 'Endwert (nominal)', fmt(r.nom), true, false);
+    doc.setFontSize(7);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(122, 120, 117);
+    doc.text('Kaufkraftbereinigt: ' + fmt(r.real), margin + 4, y + 21);
+    y += 26;
+
+    metricBox(margin, y, colW, 'Eingezahlt', fmt(r.invested), false, false);
+    metricBox(margin + colW + 6, y, colW, 'Bruttogewinn (Faktor x' + r.factor + ')', fmt(r.gain), false, false);
+    y += 24;
+
+    // ── Steuer Section
+    if (r.taxEnabled) {
+      sectionTitle('Steuerberechnung (Abgeltungssteuer 26,375 %)');
+      metricBox(margin, y, colW, 'Steuer auf Gewinn', fmt(r.taxAmount), false, true);
+      metricBox(margin + colW + 6, y, colW, 'Endwert nach Steuern', fmt(r.afterTax), false, false);
+      y += 24;
+      doc.setFontSize(7);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(122, 120, 117);
+      doc.text('Kaufkraftbereinigt nach Steuern: ' + fmt(r.afterTaxReal), margin, y);
+      y += 8;
+    }
+
+    // ── Chart image
+    sectionTitle('Wachstumsverlauf');
+    const chartCanvas = document.getElementById('chart');
+    const chartImg = chartCanvas.toDataURL('image/png');
+    const chartH = 55;
+    doc.addImage(chartImg, 'PNG', margin, y, pageW - margin*2, chartH);
+    y += chartH + 8;
+
+    // ── Disclaimer
+    doc.setFontSize(6.5);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(80, 78, 76);
+    const disclaimer = 'Diese Berechnung dient nur zur Orientierung und stellt keine Anlageberatung dar. Vergangene Renditen sind keine Garantie für künftige Ergebnisse. Steuerberechnung vereinfacht.';
+    const lines = doc.splitTextToSize(disclaimer, pageW - margin*2);
+    doc.text(lines, margin, 285);
+
+    // ── Accent line footer
+    doc.setFillColor(200, 240, 96);
+    doc.rect(margin, 291, pageW - margin*2, 0.6, 'F');
+
+    doc.save('renditerechner-' + new Date().toISOString().slice(0,10) + '.pdf');
+
+    btn.classList.remove('loading');
+    btn.innerHTML = '<svg viewBox="0 0 24 24" style="width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg> PDF Export';
+  }
+
+  // Live slider labels
   const fields = [
     ['start', 'lStart', v => Math.round(v).toLocaleString('de-DE') + ' €'],
     ['rate',  'lRate',  v => Math.round(v).toLocaleString('de-DE') + ' €'],
@@ -634,11 +799,10 @@
     ['ret',   'lReturn',v => parseFloat(v).toString().replace('.',',') + ' %'],
     ['infl',  'lInfl',  v => parseFloat(v).toString().replace('.',',') + ' %'],
   ];
-  fields.forEach(([id, lbl, fmt]) => {
+  fields.forEach(([id, lbl, fmtFn]) => {
     const el = document.getElementById(id);
     el.addEventListener('input', () => {
-      document.getElementById(lbl).textContent = fmt(el.value);
-      // Reset preset selection if user manually changes return slider
+      document.getElementById(lbl).textContent = fmtFn(el.value);
       if (id === 'ret') {
         document.getElementById('preset').value = '';
         document.getElementById('presetBadge').className = 'preset-badge';
